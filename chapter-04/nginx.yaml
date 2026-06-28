@@ -1,0 +1,30 @@
+# 使用するKubernetes APIのバージョン
+# Podは基本リソースなので v1 を指定する
+apiVersion: v1
+
+# 作成するリソースの種類
+# ここでは Pod を作成する
+kind: Pod
+
+# Podに関する基本情報を定義する
+metadata:
+  # Podの名前
+  # kubectl get pods などで表示される名前
+  name: nginx
+
+# Podの具体的な中身を定義する
+spec:
+  # Pod内で起動するコンテナの一覧
+  # Podには1つ以上のコンテナを定義できる
+  containers:
+    # 1つ目のコンテナ定義
+    - name: nginx
+      # コンテナイメージ
+      # Docker Hubにある nginx の 1.25.3 バージョンを使用する
+      image: nginx:1.25.3
+
+      # コンテナが使用するポートの情報
+      ports:
+        # コンテナ内で nginx が待ち受けるポート番号
+        # nginxは通常80番ポートでHTTP通信を受け付ける
+        - containerPort: 80
