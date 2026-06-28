@@ -13,7 +13,7 @@ kind: Pod
 metadata:
   # Pod の名前です。
   # kubectl get pod などで表示される名前になります。
-  name: myapp
+  name: myapp-label
 
   # Pod に付けるラベルです。
   # ラベルは Kubernetes 内でリソースを分類・検索するための目印です。
