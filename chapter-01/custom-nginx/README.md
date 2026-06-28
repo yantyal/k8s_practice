@@ -1,19 +1,21 @@
-### Nginxコンテナを起動する
+# custom-nginx
+
+## Nginxコンテナを起動する
 
 Dockerで作成した `nginx-custom:1.0.0` イメージを使って、Nginxコンテナを起動する。
 
-#### 実行するコマンド
+### 実行するコマンド
 
 ```bash
 docker run --rm --detach --publish 8080:80 --name web nginx-custom:1.0.0
 ```
 
-#### コマンド全体の意味
+### コマンド全体の意味
 
 `nginx-custom:1.0.0` イメージから `web` という名前のコンテナを起動する。
 ホスト側の8080番ポートとコンテナ側の80番ポートを紐づけることで、ブラウザから `http://localhost:8080` にアクセスできるようにする。
 
-#### オプションの説明
+### オプションの説明
 
 * `--rm`
 
@@ -39,7 +41,7 @@ docker run --rm --detach --publish 8080:80 --name web nginx-custom:1.0.0
   起動するDockerイメージを指定する。
   この例では、`nginx-custom` というイメージの `1.0.0` タグを使用している。
 
-#### 起動確認
+### 起動確認
 
 ```bash
 docker ps
@@ -48,7 +50,7 @@ docker ps
 起動中のコンテナ一覧を確認する。
 `web` という名前のコンテナが表示されていれば、起動できている。
 
-#### ブラウザで確認
+### ブラウザで確認
 
 ```text
 http://localhost:8080
@@ -56,7 +58,7 @@ http://localhost:8080
 
 ホスト側の8080番ポートにアクセスすることで、コンテナ内で起動しているNginxにアクセスできる。
 
-#### コンテナの停止
+### コンテナの停止
 
 ```bash
 docker stop web
