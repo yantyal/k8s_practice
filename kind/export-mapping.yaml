@@ -1,0 +1,58 @@
+# kind で Kubernetes クラスターを作成するときの設定ファイルです。
+#
+# kind は「Kubernetes IN Docker」の略で、
+# Docker コンテナ上に Kubernetes クラスターを作成するツールです。
+#
+# この設定では、control-plane ノードを 1 つ持つクラスターを作成し、
+# ホストPCから Kubernetes 内の NodePort Service にアクセスできるように
+# ポートマッピングを設定しています。
+
+# 作成するリソースの種類です。
+# kind のクラスター設定なので Cluster を指定します。
+kind: Cluster
+
+# kind の設定ファイルで使用する API バージョンです。
+# kind のクラスター設定では、この v1alpha4 がよく使われます。
+apiVersion: kind.x-k8s.io/v1alpha4
+
+# クラスターを構成するノードを定義します。
+# kind では、Kubernetes のノードが Docker コンテナとして作成されます。
+nodes:
+# 1 つ目のノードを定義しています。
+- role: control-plane
+
+  # extraPortMappings は、
+  # ホストPCのポートと kind ノード内のポートをつなぐ設定です。
+  #
+  # kind の Kubernetes クラスターは Docker コンテナ内で動いているため、
+  # NodePort Service を作成しても、
+  # そのままではホストPCのブラウザや curl からアクセスできない場合があります。
+  #
+  # そこで extraPortMappings を設定して、
+  # ホストPCのポートと kind ノード内のポートを対応させます。
+  extraPortMappings:
+  # ポートマッピングを 1 つ定義しています。
+  - containerPort: 30599
+
+    # ホストPC側で待ち受けるポート番号です。
+    #
+    # この例では、ホストPCの 30599 番ポートにアクセスすると、
+    # kind ノード内の 30599 番ポートへ転送されます。
+    #
+    # 例:
+    # http://127.0.0.1:30599
+    hostPort: 30599
+
+    # ホストPC側で待ち受けるアドレスです。
+    #
+    # 127.0.0.1 は localhost を表します。
+    # つまり、このPC自身からのみアクセスできる設定です。
+    #
+    # 他のPCからアクセスさせたい場合は、
+    # 0.0.0.0 を使うケースもあります。
+    listenAddress: "127.0.0.1"
+
+    # 使用する通信プロトコルです。
+    #
+    # Web アプリケーションや HTTP 通信では TCP を使います。
+    protocol: TCP

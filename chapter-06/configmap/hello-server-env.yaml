@@ -1,0 +1,104 @@
+---
+# Deployment は、Pod を管理するための Kubernetes リソースです。
+# 指定した数の Pod を起動し、Pod が停止した場合は自動で再作成してくれます。
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  # Deployment の名前です。
+  # kubectl get deployment で確認すると、この名前で表示されます。
+  name: hello-server
+
+  # Deployment 自体に付けるラベルです。
+  # リソースを分類・識別するために使います。
+  labels:
+    app: hello-server
+
+spec:
+  # 起動しておきたい Pod の数です。
+  # この例では hello-server の Pod を 1 個起動します。
+  replicas: 1
+
+  # この Deployment が管理する Pod を見つけるための条件です。
+  #
+  # app: hello-server というラベルを持つ Pod を
+  # この Deployment の管理対象にします。
+  selector:
+    matchLabels:
+      app: hello-server
+
+  # Deployment が作成する Pod のテンプレートです。
+  # 実際に起動される Pod の設定をここに書きます。
+  template:
+    metadata:
+      # Pod に付けるラベルです。
+      #
+      # selector.matchLabels と一致している必要があります。
+      # 一致していないと、Deployment が Pod を正しく管理できません。
+      labels:
+        app: hello-server
+
+    spec:
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      - name: hello-server
+
+        # 使用するコンテナイメージです。
+        #
+        # blux2/hello-server:1.4 というイメージを使って
+        # hello-server アプリケーションを起動します。
+        image: blux2/hello-server:1.4
+
+        # コンテナに渡す環境変数を定義します。
+        #
+        # アプリケーションは、この環境変数を読み取って
+        # 起動時の設定に使うことがあります。
+        env:
+        # PORT という名前の環境変数を設定します。
+        - name: PORT
+
+          # valueFrom は、値を直接書くのではなく、
+          # 別の Kubernetes リソースから値を取得する設定です。
+          valueFrom:
+
+            # ConfigMap の指定したキーから値を取得します。
+            configMapKeyRef:
+              # 参照する ConfigMap の名前です。
+              #
+              # 下で定義している hello-server-configmap から値を取得します。
+              name: hello-server-configmap
+
+              # ConfigMap の data にあるキー名です。
+              #
+              # data.PORT の値である "8081" が、
+              # コンテナの環境変数 PORT に設定されます。
+              key: PORT
+
+---
+# ConfigMap は、アプリケーションの設定値を管理するための Kubernetes リソースです。
+#
+# コンテナイメージに設定値を埋め込むのではなく、
+# Kubernetes 側で設定値を管理できます。
+#
+# たとえば、ポート番号やログレベルなど、
+# 環境ごとに変わる設定を管理するのに使います。
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  # ConfigMap の名前です。
+  #
+  # Deployment 側の configMapKeyRef.name で
+  # この名前を指定して参照します。
+  name: hello-server-configmap
+
+data:
+  # PORT という設定値を定義しています。
+  #
+  # ConfigMap の data の値は文字列として扱われるため、
+  # "8081" のようにクォートして書くとわかりやすいです。
+  #
+  # Deployment 側では、この値が環境変数 PORT に設定されます。
+  PORT: "8081"
+  # PORT: "5555"

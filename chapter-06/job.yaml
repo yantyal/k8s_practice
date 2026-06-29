@@ -1,0 +1,47 @@
+# Job は、決まった処理を最後まで実行するための Kubernetes リソースです。
+#
+# Deployment は Web サーバーのように「動き続けるアプリ」に向いています。
+# Job はバッチ処理のように「処理が終わったら終了するアプリ」に向いています。
+#
+# この例では、date コマンドを 1 回実行して終了する Job を作成します。
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  # Job の名前です。
+  # kubectl get job で確認すると、この名前で表示されます。
+  name: date-checker
+
+spec:
+  # Job が作成する Pod のテンプレートです。
+  # 実際に起動される Pod の設定をここに書きます。
+  template:
+    spec:
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      - name: date
+
+        # 使用するコンテナイメージです。
+        # この例では Ubuntu 22.04 のイメージを使います。
+        image: ubuntu:22.04
+
+        # コンテナ起動時に実行するコマンドです。
+        #
+        # date コマンドは、現在日時を表示するコマンドです。
+        # コマンドの実行が終わると、コンテナも終了します。
+        command: ["date"]
+
+      # Job では restartPolicy の指定が必須です。
+      #
+      # Never は、コンテナが失敗しても同じ Pod 内では再起動しない設定です。
+      # 失敗した場合は、Job が新しい Pod を作り直して再実行します。
+      #
+      # Job で指定できる restartPolicy は Never または OnFailure です。
+      restartPolicy: Never
+
+  # Job が失敗したときに、何回まで再試行するかを指定します。
+  #
+  # backoffLimit: 4 の場合、失敗時に最大 4 回まで再試行します。
+  # それでも成功しない場合、その Job は失敗扱いになります。
+  backoffLimit: 4

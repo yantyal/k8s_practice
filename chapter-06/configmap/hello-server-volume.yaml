@@ -1,0 +1,110 @@
+---
+# Deployment は、Pod を管理するための Kubernetes リソースです。
+# 指定した数の Pod を起動し、Pod が停止した場合は自動で再作成してくれます。
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  # Deployment の名前です。
+  # kubectl get deployment で確認すると、この名前で表示されます。
+  name: hello-server
+
+  # Deployment 自体に付けるラベルです。
+  # リソースを分類・識別するために使います。
+  labels:
+    app: hello-server
+
+spec:
+  # 起動しておきたい Pod の数です。
+  # この例では hello-server の Pod を 3 個起動します。
+  replicas: 3
+
+  # この Deployment が管理する Pod を見つけるための条件です。
+  # app: hello-server というラベルを持つ Pod を管理対象にします。
+  selector:
+    matchLabels:
+      app: hello-server
+
+  # Deployment が作成する Pod のテンプレートです。
+  # 実際に作られる Pod の設定をここに書きます。
+  template:
+    metadata:
+      # Pod に付けるラベルです。
+      #
+      # selector.matchLabels と一致している必要があります。
+      # 一致していないと Deployment が Pod を正しく管理できません。
+      labels:
+        app: hello-server
+
+    spec:
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      - name: hello-server
+
+        # 使用するコンテナイメージです。
+        image: blux2/hello-server:1.5
+
+        # volumeMounts は、Pod に用意した Volume を
+        # コンテナ内のどこに配置するかを指定する設定です。
+        #
+        # 今回は ConfigMap の内容をファイルとして
+        # コンテナ内にマウントします。
+        volumeMounts:
+        # 下の volumes で定義している hello-server-config という Volume を使います。
+        - name: hello-server-config
+
+          # コンテナ内のマウント先ディレクトリです。
+          #
+          # この例では、ConfigMap の内容が
+          # /etc/config 配下にファイルとして配置されます。
+          #
+          # ConfigMap に myconfig.txt というキーがあるため、
+          # コンテナ内では次のようなファイルになります。
+          #
+          # /etc/config/myconfig.txt
+          mountPath: /etc/config
+
+      # Pod で使用する Volume を定義します。
+      #
+      # Volume は、コンテナにファイルやディレクトリを渡すための仕組みです。
+      volumes:
+      # hello-server-config という名前の Volume を定義しています。
+      #
+      # volumeMounts.name と一致している必要があります。
+      - name: hello-server-config
+
+        # この Volume の元データとして ConfigMap を使います。
+        configMap:
+          # 使用する ConfigMap の名前です。
+          #
+          # 下で定義している hello-server-configmap を参照します。
+          name: hello-server-configmap
+
+---
+# ConfigMap は、アプリケーションの設定値を管理するための Kubernetes リソースです。
+#
+# ConfigMap は環境変数として渡すこともできますが、
+# 今回のようにファイルとしてコンテナに渡すこともできます。
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  # ConfigMap の名前です。
+  #
+  # Deployment 側の volumes.configMap.name で
+  # この名前を指定して参照します。
+  name: hello-server-configmap
+
+data:
+  # ConfigMap のキーです。
+  #
+  # ConfigMap を Volume としてマウントすると、
+  # このキー名がそのままファイル名になります。
+  #
+  # 今回は /etc/config/myconfig.txt というファイルが作られます。
+  myconfig.txt: |-
+    # ここから下が myconfig.txt の中身になります。
+    # |- は複数行の文字列を書くための YAML の記法です。
+    # 最後の改行は取り除かれます。
+    I am hungry.

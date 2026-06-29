@@ -1,0 +1,105 @@
+# Deployment は、Pod を複数管理するための Kubernetes リソースです。
+# Pod の数を維持したり、アプリケーションの更新を安全に行ったりできます。
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  # Deployment の名前です。
+  # kubectl get deployment などで表示される名前になります。
+  name: nginx-deployment
+
+  # この Deployment 自体に付けるラベルです。
+  # ラベルは Kubernetes リソースを分類・識別するために使います。
+  labels:
+    app: nginx
+
+spec:
+  # Pod の更新方法を指定します。
+  # Deployment では、アプリケーションを更新するときに
+  # どのように古い Pod から新しい Pod へ切り替えるかを設定できます。
+  strategy:
+    # RollingUpdate は、Pod を少しずつ入れ替える更新方法です。
+    # 古い Pod をすべて一度に止めるのではなく、
+    # 新しい Pod を作成しながら段階的に更新します。
+    type: RollingUpdate
+
+    # RollingUpdate の細かい設定です。
+    rollingUpdate:
+      # 更新中に利用できなくなってよい Pod の最大数です。
+      #
+      # 25% の場合、replicas が 10 なので、
+      # 最大で 2〜3 個程度の Pod が一時的に利用不可になってもよい、
+      # という意味になります。
+      #
+      # 値は数値でも割合でも指定できます。
+      # 例:
+      # maxUnavailable: 2
+      # maxUnavailable: 25%
+      maxUnavailable: 25%
+
+      # 更新中に、指定した replicas の数を超えて
+      # 追加で作成してよい Pod の最大数です。
+      #
+      # 100% の場合、replicas が 10 なので、
+      # 最大で追加 10 個まで Pod を作成できます。
+      #
+      # つまり、更新中は一時的に最大 20 個の Pod が存在する可能性があります。
+      maxSurge: 100%
+
+  # 起動しておきたい Pod の数です。
+  # この例では nginx の Pod を 10 個起動します。
+  replicas: 10
+
+  # この Deployment が管理する Pod を見つけるための条件です。
+  # ここでは app: nginx というラベルを持つ Pod を管理対象にします。
+  selector:
+    matchLabels:
+      app: nginx
+
+  # Deployment が作成する Pod のテンプレートです。
+  # 実際に作られる Pod の設定をここに書きます。
+  template:
+    metadata:
+      # Pod に付けるラベルです。
+      #
+      # selector.matchLabels と一致している必要があります。
+      # ここが一致していないと Deployment が Pod を正しく管理できません。
+      labels:
+        app: nginx
+
+    spec:
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      # Pod 内でコンテナを識別するために使います。
+      - name: nginx
+
+        # 使用するコンテナイメージです。
+        # この例では nginx の 1.24.0 を使用します。
+        # image: nginx:1.24.0
+
+        # この例では nginx の 1.25.3 を使用します。
+        image: nginx:1.25.3
+
+        # コンテナが使用するポートを定義します。
+        ports:
+        # nginx は通常 HTTP サーバーとして 80 番ポートを使います。
+        - containerPort: 80
+
+        # コンテナのライフサイクルイベントを設定します。
+        # 起動時や終了時に特定の処理を実行できます。
+        lifecycle:
+          # preStop は、コンテナが終了する直前に実行される処理です。
+          #
+          # Pod が削除されるときや RollingUpdate で古い Pod が停止されるときに、
+          # いきなり終了せず、終了前の処理を行うために使います。
+          preStop:
+            exec:
+              # コンテナ終了前に実行するコマンドです。
+              #
+              # この例では sleep 10 を実行して、
+              # コンテナ終了前に 10 秒待機します。
+              #
+              # RollingUpdate 時に古い Pod がすぐ終了しないようにすることで、
+              # リクエスト処理中の通信が急に切れることを減らせます。
+              command: ["/bin/sh", "-c", "sleep 10"]

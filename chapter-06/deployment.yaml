@@ -1,0 +1,60 @@
+# 使用する Kubernetes API のバージョンを指定します
+# Deployment は apps/v1 を使用します
+apiVersion: apps/v1
+
+# 作成する Kubernetes リソースの種類を指定します
+# Deployment は Pod の数や更新を管理するためのリソースです
+kind: Deployment
+
+# この Deployment 自体の情報を定義します
+metadata:
+  # Deployment の名前です
+  # kubectl get deployment などで表示される名前になります
+  name: nginx-deployment
+
+  # Deployment に付けるラベルです
+  # ラベルはリソースを識別・分類するために使います
+  labels:
+    # app=nginx というラベルを付けています
+    app: nginx
+
+# Deployment の具体的な設定を定義します
+spec:
+  # 起動したい Pod の数を指定します
+  # この例では nginx の Pod を 3 個起動します
+  replicas: 3
+
+  # Deployment が管理対象とする Pod を選ぶ条件です
+  # template.metadata.labels と一致している必要があります
+  selector:
+    matchLabels:
+      # app=nginx のラベルが付いた Pod を管理対象にします
+      app: nginx
+
+  # Deployment が作成する Pod のテンプレートです
+  # ここに書いた内容をもとに Pod が作成されます
+  template:
+    # 作成される Pod に付ける情報です
+    metadata:
+      # Pod に付けるラベルです
+      # spec.selector.matchLabels と一致している必要があります
+      labels:
+        app: nginx
+
+    # Pod の中身を定義します
+    spec:
+      # Pod 内で起動するコンテナの一覧です
+      containers:
+      # 1 つ目のコンテナを定義します
+      - name: nginx
+        # 使用するコンテナイメージを指定します
+        # nginx:1.24.0 は nginx のバージョン 1.24.0 のイメージです
+        # image: nginx:1.24.0
+
+        # nginx:1.25.3 は nginx のバージョン 1.25.3 のイメージです
+        image: nginx:1.25.3
+
+        # コンテナが使用するポートを定義します
+        ports:
+        # nginx は通常 HTTP 通信用に 80 番ポートを使用します
+        - containerPort: 80

@@ -1,0 +1,56 @@
+# 使用する Kubernetes API のバージョン
+# ReplicaSet は apps/v1 という API グループを使用する
+apiVersion: apps/v1
+
+# 作成するリソースの種類
+# ReplicaSet は、指定した数の Pod が常に動くように管理するリソース
+kind: ReplicaSet
+
+# この ReplicaSet 自体の情報
+metadata:
+  # ReplicaSet の名前
+  # kubectl get replicaset などで表示される名前
+  name: httpserver
+
+  # ReplicaSet に付けるラベル
+  # リソースを分類・検索するための目印
+  labels:
+    # この ReplicaSet は httpserver アプリ用であることを表す
+    app: httpserver
+
+# ReplicaSet の具体的な設定
+spec:
+  # 起動しておきたい Pod の数
+  # ここでは同じ内容の Pod を 3 個起動する
+  replicas: 3
+
+  # ReplicaSet が管理対象にする Pod を選ぶ条件
+  selector:
+    # Pod のラベルがこの条件に一致するものを管理する
+    matchLabels:
+      # app: httpserver というラベルを持つ Pod を管理対象にする
+      app: httpserver
+
+  # ReplicaSet が作成する Pod のテンプレート
+  # Pod が不足した場合、この内容を元に新しい Pod が作られる
+  template:
+    # 作成される Pod の metadata
+    metadata:
+      # Pod に付けるラベル
+      labels:
+        # selector.matchLabels と一致している必要がある
+        # これにより ReplicaSet がこの Pod を管理できる
+        app: httpserver
+
+    # 作成される Pod の具体的な設定
+    spec:
+      # Pod 内で起動するコンテナの一覧
+      containers:
+        # 1つ目のコンテナ定義
+        - name: nginx
+          # コンテナ名
+          # Pod 内でこのコンテナを識別するための名前
+
+          # 使用するコンテナイメージ
+          # nginx の 1.25.3 バージョンを使用する
+          image: nginx:1.25.3

@@ -1,0 +1,70 @@
+# Deployment は、Pod を複数管理するための Kubernetes リソースです。
+# Pod の数を維持したり、アプリケーションを更新したりできます。
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  # Deployment の名前です。
+  # kubectl get deployment で確認すると、この名前で表示されます。
+  name: hello-server
+
+  # Deployment 自体に付けるラベルです。
+  # リソースを分類・識別するために使います。
+  labels:
+    app: hello-server
+
+spec:
+  # 起動しておきたい Pod の数です。
+  # この例では hello-server の Pod を 3 個起動します。
+  replicas: 3
+
+  # この Deployment が管理する Pod を見つけるための条件です。
+  # app: hello-server というラベルを持つ Pod を管理対象にします。
+  selector:
+    matchLabels:
+      app: hello-server
+
+  # Deployment が作成する Pod のテンプレートです。
+  # 実際に作られる Pod の設定をここに書きます。
+  template:
+    metadata:
+      # Pod に付けるラベルです。
+      #
+      # selector.matchLabels と一致している必要があります。
+      # ここが一致していないと Deployment が Pod を正しく管理できません。
+      labels:
+        app: hello-server
+
+    spec:
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      # Pod 内でコンテナを識別するために使います。
+      - name: hello-server
+
+        # 使用するコンテナイメージです。
+        #
+        # blux2/hello-server はイメージ名です。
+        # :1.3 はタグです。
+        # タグを変更すると、Deployment の更新対象になります。
+        #
+        # 例:
+        # blux2/hello-server:1.0
+        # ↓
+        # blux2/hello-server:1.3
+        #
+        # このようにイメージのバージョンを変えると、
+        # Kubernetes は新しい Pod を作成し、
+        # 古い Pod から新しい Pod へ入れ替えます。
+        image: blux2/hello-server:1.3
+
+        # コンテナが使用するポートを定義します。
+        ports:
+        # コンテナ内のアプリケーションが 8080 番ポートで待ち受けます。
+        #
+        # containerPort は「このコンテナはこのポートを使います」という説明です。
+        # これを書いただけでは、外部からアクセスできるようにはなりません。
+        #
+        # 外部や別の Pod からアクセスしたい場合は、
+        # Service などの Kubernetes リソースを別途作成します。
+        - containerPort: 8080

@@ -1,0 +1,39 @@
+# Service は、Pod にアクセスするための入口を作る Kubernetes リソースです。
+#
+# Pod は作り直されることがあり、そのたびに IP アドレスが変わる可能性があります。
+# そのため、Pod に直接アクセスするのではなく、
+# Service を通してアクセスするのが一般的です。
+apiVersion: v1
+kind: Service
+
+metadata:
+  # Service の名前です。
+  # kubectl get service で確認すると、この名前で表示されます。
+  name: hello-server-service
+
+spec:
+  # この Service が通信を振り分ける対象の Pod を指定します。
+  #
+  # app: hello-server というラベルを持つ Pod に対して
+  # 通信を転送します。
+  selector:
+    app: hello-server
+
+  # Service が受け付けるポートと、
+  # 転送先の Pod のポートを設定します。
+  ports:
+    # 通信プロトコルです。
+    # Web アプリケーションでは TCP がよく使われます。
+    - protocol: TCP
+
+      # Service 側で受け付けるポート番号です。
+      #
+      # 他の Pod からこの Service にアクセスするときは、
+      # hello-server-service:8080 のようにアクセスできます。
+      port: 8080
+
+      # 転送先の Pod 内のコンテナポートです。
+      #
+      # Deployment 側で containerPort: 8080 としているため、
+      # ここでも 8080 を指定しています。
+      targetPort: 8080

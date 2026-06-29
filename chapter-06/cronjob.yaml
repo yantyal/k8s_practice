@@ -1,0 +1,67 @@
+# CronJob は、Job を定期実行するための Kubernetes リソースです。
+#
+# Job は「1回だけ実行して終わる処理」に使います。
+# CronJob は「決まったスケジュールで繰り返し実行する処理」に使います。
+#
+# この例では、2分ごとに date コマンドを実行する Job を作成します。
+apiVersion: batch/v1
+kind: CronJob
+
+metadata:
+  # CronJob の名前です。
+  # kubectl get cronjob で確認すると、この名前で表示されます。
+  name: date
+
+spec:
+  # Job を実行するスケジュールです。
+  #
+  # Cron 形式で指定します。
+  #
+  # 書式:
+  # 分 時 日 月 曜日
+  #
+  # "*/2 * * * *" は「2分ごとに実行する」という意味です。
+  #
+  # 例:
+  # "*/2 * * * *"
+  #   2分ごと
+  #
+  # "0 * * * *"
+  #   毎時0分
+  #
+  # "0 9 * * *"
+  #   毎日9時
+  schedule: "*/2 * * * *"
+
+  # CronJob から作成される Job のテンプレートです。
+  #
+  # CronJob は、この jobTemplate をもとに
+  # 指定したスケジュールで Job を作成します。
+  jobTemplate:
+    spec:
+      # Job が作成する Pod のテンプレートです。
+      template:
+        spec:
+          # Pod の中で起動するコンテナを定義します。
+          containers:
+          # コンテナの名前です。
+          - name: date
+
+            # 使用するコンテナイメージです。
+            # この例では Ubuntu 22.04 のイメージを使います。
+            image: ubuntu:22.04
+
+            # コンテナ起動時に実行するコマンドです。
+            #
+            # date コマンドは、現在日時を表示するコマンドです。
+            # コマンドの実行が終わると、コンテナも終了します。
+            command: ["date"]
+
+          # Job では restartPolicy の指定が必須です。
+          #
+          # Never は、コンテナが失敗しても同じ Pod 内では再起動しない設定です。
+          # 失敗した場合は、Job が新しい Pod を作り直して再実行します。
+          #
+          # CronJob の jobTemplate 内でも、Job と同じように
+          # restartPolicy は Never または OnFailure を指定します。
+          restartPolicy: Never

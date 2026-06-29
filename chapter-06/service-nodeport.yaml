@@ -1,0 +1,61 @@
+# Service は、Pod にアクセスするための入口を作る Kubernetes リソースです。
+#
+# Pod は作り直されることがあり、そのたびに IP アドレスが変わる可能性があります。
+# そのため、Pod に直接アクセスするのではなく、
+# Service を通してアクセスするのが一般的です。
+apiVersion: v1
+kind: Service
+
+metadata:
+  # Service の名前です。
+  #
+  # kubectl get service --namespace default
+  # などで確認すると、この名前で表示されます。
+  name: hello-server-external
+
+spec:
+  # Service の種類を指定します。
+  #
+  # NodePort は、Kubernetes の Node のポートを使って、
+  # クラスター外部から Pod にアクセスできるようにする Service です。
+  #
+  # kind を使っている場合は、kind の設定ファイルで
+  # extraPortMappings を設定しておくことで、
+  # ホスト PC から NodePort にアクセスできます。
+  type: NodePort
+
+  # この Service が通信を転送する対象の Pod を指定します。
+  #
+  # app: hello-server というラベルを持つ Pod に通信を転送します。
+  #
+  # Deployment 側の Pod の labels と一致している必要があります。
+  selector:
+    app: hello-server
+
+  # Service が受け付けるポートと、
+  # 転送先の Pod のポートを設定します。
+  ports:
+    # Service 側で受け付けるポート番号です。
+    #
+    # クラスター内部からアクセスする場合は、
+    # hello-server-external:8080 のようにアクセスできます。
+    - port: 8080
+
+      # 転送先の Pod 内のコンテナポートです。
+      #
+      # Deployment 側で containerPort: 8080 としているため、
+      # ここでも 8080 を指定しています。
+      targetPort: 8080
+
+      # Node 側で公開するポート番号です。
+      #
+      # NodePort Service では、各 Node の指定したポートで通信を受け付け、
+      # Service 経由で Pod に転送します。
+      #
+      # この例では 30599 番ポートを使います。
+      #
+      # kind の extraPortMappings で hostPort: 30599 を設定している場合、
+      # ホスト PC から次のようにアクセスできます。
+      #
+      # http://127.0.0.1:30599
+      nodePort: 30599
