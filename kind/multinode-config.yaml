@@ -1,0 +1,53 @@
+# kind で Kubernetes クラスターを作成するときの設定ファイルです。
+#
+# kind は「Kubernetes IN Docker」の略で、
+# Docker コンテナ上に Kubernetes クラスターを作成するツールです。
+#
+# この設定では、次の 3 つの Node を持つクラスターを作成します。
+#
+# * control-plane Node 1台
+# * worker Node 2台
+#
+# つまり、複数 Node 構成の Kubernetes クラスターを
+# ローカル環境で試すための設定です。
+
+# 作成するリソースの種類です。
+# kind のクラスター設定なので Cluster を指定します。
+kind: Cluster
+
+# kind の設定ファイルで使用する API バージョンです。
+# kind のクラスター設定では v1alpha4 がよく使われます。
+apiVersion: kind.x-k8s.io/v1alpha4
+
+# クラスターを構成する Node を定義します。
+#
+# kind では、ここに書いた Node が Docker コンテナとして作成されます。
+nodes:
+# control-plane Node です。
+#
+# control-plane は、Kubernetes クラスター全体を管理する役割を持ちます。
+# Pod をどの Node に配置するかを決めたり、
+# クラスターの状態を管理したりします。
+#
+# 主なコンポーネント:
+# * kube-apiserver
+# * scheduler
+# * controller-manager
+# * etcd
+- role: control-plane
+
+# worker Node です。
+#
+# worker は、実際にアプリケーションの Pod を動かす Node です。
+# Deployment や Pod を作成すると、
+# 基本的には worker Node 上でコンテナが起動します。
+- role: worker
+
+# 2台目の worker Node です。
+#
+# worker Node を複数用意することで、
+# Pod が複数の Node に分散配置される様子を学習できます。
+#
+# たとえば、replicas: 3 の Deployment を作成したときに、
+# Pod がどの Node に配置されるかを確認できます。
+- role: worker

@@ -1,0 +1,196 @@
+---
+# Deployment は、Pod を複数管理するための Kubernetes リソースです。
+# この例では、HPA によって Pod 数を自動調整する対象になります。
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  # Deployment の名前です。
+  #
+  # 後ほど HorizontalPodAutoscaler の scaleTargetRef で
+  # この Deployment 名を指定します。
+  name: hpa-handson
+
+  # Deployment 自体に付けるラベルです。
+  labels:
+    app: hello-server
+
+spec:
+  # この Deployment が管理する Pod を見つけるための条件です。
+  #
+  # app: hello-server というラベルを持つ Pod を
+  # この Deployment の管理対象にします。
+  selector:
+    matchLabels:
+      app: hello-server
+
+  # Deployment が作成する Pod のテンプレートです。
+  template:
+    metadata:
+      # Pod に付けるラベルです。
+      #
+      # selector.matchLabels と一致している必要があります。
+      # また、Service の selector とも一致しているため、
+      # Service からこの Pod に通信が転送されます。
+      labels:
+        app: hello-server
+
+    spec:
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      - name: hello-server
+
+        # 使用するコンテナイメージです。
+        image: blux2/hello-server:1.8
+
+        # コンテナが使用するポートを定義します。
+        ports:
+        # アプリケーションが 8080 番ポートで待ち受けます。
+        - containerPort: 8080
+
+        # resources は、コンテナが使用する CPU やメモリの
+        # 要求量と上限を指定する設定です。
+        #
+        # HPA で CPU 使用率をもとに Pod 数を自動調整する場合、
+        # cpu requests の設定が重要です。
+        resources:
+          # requests は、コンテナが最低限必要とするリソース量です。
+          #
+          # Kubernetes は、この requests をもとに
+          # Pod をどの Node に配置できるか判断します。
+          requests:
+            # 最低限必要とするメモリ量です。
+            memory: "10Mi"
+
+            # 最低限必要とする CPU 量です。
+            #
+            # 5m は 5 ミリ CPU の意味です。
+            # 1000m = 1 CPU なので、5m = 0.005 CPU です。
+            #
+            # HPA の averageUtilization は、
+            # この cpu requests を基準に計算されます。
+            cpu: "5m"
+
+          # limits は、コンテナが使用できるリソースの上限です。
+          limits:
+            # 使用できるメモリの上限です。
+            #
+            # メモリ使用量がこの値を超えると、
+            # コンテナが強制終了される可能性があります。
+            memory: "10Mi"
+
+            # 使用できる CPU の上限です。
+            #
+            # CPU は上限を超えそうになると使用量が制限されます。
+            cpu: "5m"
+
+---
+# HorizontalPodAutoscaler は、Pod の数を自動で増減させるための
+# Kubernetes リソースです。
+#
+# よく HPA と略されます。
+#
+# CPU 使用率やメモリ使用率などを見て、
+# Deployment の replicas 数を自動で変更します。
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  # HPA の名前です。
+  # kubectl get hpa で確認すると、この名前で表示されます。
+  name: hello-server-hpa
+
+spec:
+  # 最小 Pod 数です。
+  #
+  # 負荷が低くても、最低 1 個の Pod は起動します。
+  minReplicas: 1
+
+  # 最大 Pod 数です。
+  #
+  # 負荷が高くなっても、最大 10 個までしか Pod を増やしません。
+  maxReplicas: 10
+
+  # HPA が監視するメトリクスを指定します。
+  #
+  # この例では CPU 使用率を見て Pod 数を自動調整します。
+  metrics:
+  # Resource メトリクスを使います。
+  # CPU やメモリなど、Pod のリソース使用量をもとに判断します。
+  - resource:
+      # 監視対象のリソース名です。
+      # ここでは CPU 使用率を見ます。
+      name: cpu
+
+      # 目標値を指定します。
+      target:
+        # 平均 CPU 使用率の目標値です。
+        #
+        # 50 は、各 Pod の CPU requests に対して
+        # 平均 50% 程度になるように Pod 数を調整する、という意味です。
+        #
+        # 今回 cpu requests は 5m なので、
+        # その 50% は 2.5m 程度です。
+        averageUtilization: 50
+
+        # Utilization は、requests に対する使用率を意味します。
+        type: Utilization
+
+    # メトリクスの種類です。
+    # Resource は CPU やメモリなどのリソース使用量を表します。
+    type: Resource
+
+  # HPA がどのリソースの Pod 数を増減させるかを指定します。
+  scaleTargetRef:
+    # 対象リソースの API バージョンです。
+    apiVersion: apps/v1
+
+    # 対象リソースの種類です。
+    # ここでは Deployment を対象にします。
+    kind: Deployment
+
+    # 対象の Deployment 名です。
+    #
+    # 上で定義している metadata.name: hpa-handson と一致しています。
+    name: hpa-handson
+
+---
+# Service は、Pod にアクセスするための入口を作る Kubernetes リソースです。
+#
+# Pod は作り直されると IP アドレスが変わる可能性があります。
+# そのため、Pod に直接アクセスするのではなく、
+# Service を通してアクセスするのが一般的です。
+apiVersion: v1
+kind: Service
+
+metadata:
+  # Service の名前です。
+  # kubectl get service で確認すると、この名前で表示されます。
+  name: hello-server-service
+
+spec:
+  # この Service が通信を転送する対象の Pod を指定します。
+  #
+  # app: hello-server というラベルを持つ Pod に通信を転送します。
+  selector:
+    app: hello-server
+
+  # Service が受け付けるポートと、
+  # 転送先の Pod のポートを設定します。
+  ports:
+    # 通信プロトコルです。
+    # Web アプリケーションでは TCP がよく使われます。
+    - protocol: TCP
+
+      # Service 側で受け付けるポート番号です。
+      #
+      # クラスター内部からは、
+      # hello-server-service:8080 のようにアクセスできます。
+      port: 8080
+
+      # 転送先の Pod 内のコンテナポートです。
+      #
+      # Deployment 側で containerPort: 8080 としているため、
+      # ここでも 8080 を指定しています。
+      targetPort: 8080

@@ -1,0 +1,83 @@
+# Kubernetes API のバージョンを指定します。
+# Pod を作成する場合は v1 を指定します。
+apiVersion: v1
+
+# 作成する Kubernetes リソースの種類を指定します。
+# ここでは Pod を作成します。
+kind: Pod
+
+# Pod の基本情報を定義します。
+metadata:
+  # Pod の名前です。
+  # kubectl get pod で確認すると、この名前で表示されます。
+  name: node-affinity-pod
+
+# Pod の中身を定義します。
+spec:
+  # affinity は、Pod をどの Node に配置したいかを指定するための設定です。
+  #
+  # affinity には主に次のような種類があります。
+  #
+  # * nodeAffinity
+  #   Node のラベルを条件にして、Pod を配置する Node を決めます。
+  #
+  # * podAffinity
+  #   特定の Pod と同じ Node や近い場所に配置したい場合に使います。
+  #
+  # * podAntiAffinity
+  #   特定の Pod と同じ Node に配置したくない場合に使います。
+  affinity:
+    # nodeAffinity は、Node のラベルを見て
+    # Pod をどの Node に配置するかを制御する設定です。
+    nodeAffinity:
+      # preferredDuringSchedulingIgnoredDuringExecution は、
+      # 「できればこの条件に合う Node に配置してほしい」
+      # という優先条件です。
+      #
+      # 必須条件ではないため、条件に合う Node がなくても
+      # 他に配置できる Node があれば Pod は起動します。
+      #
+      # 名前の意味:
+      #
+      # * preferred
+      #   できれば満たしてほしい条件
+      #
+      # * DuringScheduling
+      #   Pod を Node に配置するときに評価される
+      #
+      # * IgnoredDuringExecution
+      #   Pod の起動後に Node のラベルが変わっても、
+      #   実行中の Pod は退避・停止されない
+      preferredDuringSchedulingIgnoredDuringExecution:
+      # 優先条件を 1 つ定義しています。
+      - weight: 1
+
+        # preference は、優先したい Node の条件です。
+        preference:
+          # matchExpressions は、Node のラベルに対する条件を指定します。
+          matchExpressions:
+          # Node に付いている disktype というラベルを確認します。
+          - key: disktype
+
+            # operator は条件の判定方法です。
+            #
+            # In は、Node のラベル値が values の中に含まれていれば一致、
+            # という意味です。
+            operator: In
+
+            # disktype の値として ssd を持つ Node を優先します。
+            #
+            # つまり、次のようなラベルが付いた Node が優先されます。
+            #
+            # disktype=ssd
+            values:
+            - ssd
+
+  # Pod の中で起動するコンテナを定義します。
+  containers:
+  # コンテナの名前です。
+  - name: node-affinity-pod
+
+    # 使用するコンテナイメージです。
+    # この例では nginx の 1.25.3 を使用します。
+    image: nginx:1.25.3

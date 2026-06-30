@@ -1,0 +1,64 @@
+# Kubernetes API のバージョンを指定します。
+# Pod を作成する場合は v1 を指定します。
+apiVersion: v1
+
+# 作成する Kubernetes リソースの種類を指定します。
+# ここでは Pod を作成します。
+kind: Pod
+
+# Pod の基本情報を定義します。
+metadata:
+  # Pod に付けるラベルです。
+  #
+  # Service などが Pod を探すときの目印として使います。
+  # たとえば Service の selector が app: httpserver の場合、
+  # この Pod が通信の転送先として選ばれます。
+  labels:
+    app: httpserver
+
+  # Pod の名前です。
+  # kubectl get pod で確認すると、この名前で表示されます。
+  name: httpserver-liveness
+
+# Pod の中身を定義します。
+spec:
+  # Pod 内で起動するコンテナを定義します。
+  containers:
+  # コンテナの名前です。
+  - name: httpserver
+
+    # 使用するコンテナイメージです。
+    #
+    # blux2/delayfailserver:1.1 は、
+    # ヘルスチェックの動作確認に使えるサンプルイメージです。
+    image: blux2/delayfailserver:1.1
+
+    # Liveness probe の設定です。
+    #
+    # Liveness probe は、コンテナが正常に動き続けているかを確認します。
+    #
+    # 失敗が続くと、Kubernetes はコンテナが異常状態だと判断し、
+    # コンテナを再起動します。
+    livenessProbe:
+      # HTTP リクエストでヘルスチェックを行います。
+      httpGet:
+        # ヘルスチェックでアクセスするパスです。
+        #
+        # Kubernetes がコンテナに対して
+        # http://<PodのIP>:8080/healthz のようにアクセスして確認します。
+        path: /healthz
+
+        # ヘルスチェックでアクセスするポート番号です。
+        port: 8080
+
+      # コンテナ起動後、最初のヘルスチェックまで待つ秒数です。
+      #
+      # この例では、コンテナ起動後 5 秒待ってから
+      # 最初の Liveness probe を実行します。
+      initialDelaySeconds: 5
+
+      # ヘルスチェックを実行する間隔です。
+      #
+      # この例では、5 秒ごとに /healthz へアクセスして
+      # コンテナが正常に動き続けているか確認します。
+      periodSeconds: 5

@@ -1,0 +1,107 @@
+# Deployment は、Pod を複数管理するための Kubernetes リソースです。
+# 指定した数の Pod を起動し、Pod が停止した場合は自動で再作成します。
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  # Deployment の名前です。
+  # kubectl get deployment で確認すると、この名前で表示されます。
+  name: hello-server
+
+  # Deployment 自体に付けるラベルです。
+  # リソースを分類・識別するために使います。
+  labels:
+    app: hello-server
+
+spec:
+  # 起動しておきたい Pod の数です。
+  # この例では hello-server の Pod を 3 個起動します。
+  replicas: 3
+
+  # この Deployment が管理する Pod を見つけるための条件です。
+  # app: hello-server というラベルを持つ Pod を管理対象にします。
+  selector:
+    matchLabels:
+      app: hello-server
+
+  # Deployment が作成する Pod のテンプレートです。
+  # 実際に作られる Pod の設定をここに書きます。
+  template:
+    metadata:
+      # Pod に付けるラベルです。
+      #
+      # selector.matchLabels と一致している必要があります。
+      # 一致していないと Deployment が Pod を正しく管理できません。
+      labels:
+        app: hello-server
+
+    spec:
+      # affinity は、Pod をどの Node に配置するかを制御するための設定です。
+      #
+      # 今回は podAntiAffinity を使って、
+      # 同じ app: hello-server の Pod が
+      # 同じ Node に配置されないようにしています。
+      affinity:
+        # podAntiAffinity は、
+        # 条件に一致する Pod と「同じ場所」に配置しないための設定です。
+        #
+        # たとえば、同じアプリケーションの Pod を
+        # できるだけ別々の Node に分散したい場合に使います。
+        podAntiAffinity:
+          # requiredDuringSchedulingIgnoredDuringExecution は、
+          # 「必ず満たす必要がある条件」です。
+          #
+          # 条件を満たす Node がない場合、
+          # Pod は起動できず Pending になります。
+          #
+          # 名前の意味:
+          #
+          # * required
+          #   必須条件
+          #
+          # * DuringScheduling
+          #   Pod を Node に配置するときに評価される
+          #
+          # * IgnoredDuringExecution
+          #   Pod の起動後に条件が変わっても、
+          #   実行中の Pod は退避・停止されない
+          requiredDuringSchedulingIgnoredDuringExecution:
+          # Pod を配置したくない条件を定義します。
+          - labelSelector:
+              # matchExpressions は、Pod のラベルに対する条件を指定します。
+              matchExpressions:
+              # app というラベルを確認します。
+              - key: app
+
+                # values に指定した値と一致するかを確認します。
+                values:
+                - hello-server
+
+                # In は、Pod のラベル値が values の中に含まれていれば一致、
+                # という意味です。
+                #
+                # つまり、app: hello-server の Pod が対象になります。
+                operator: In
+
+            # topologyKey は、「どの単位で同じ場所と判断するか」を指定します。
+            #
+            # kubernetes.io/hostname は Node ごとに異なる値を持つラベルです。
+            # そのため、この設定では「同じ Node に置かない」という意味になります。
+            #
+            # つまり、app: hello-server の Pod がすでに動いている Node には、
+            # 新しい hello-server Pod を配置しないようにします。
+            topologyKey: kubernetes.io/hostname
+
+      # Pod の中で起動するコンテナを定義します。
+      containers:
+      # コンテナの名前です。
+      - name: hello-server
+
+        # 使用するコンテナイメージです。
+        # この例では blux2/hello-server:1.8 を使います。
+        image: blux2/hello-server:1.8
+
+        # コンテナが使用するポートを定義します。
+        ports:
+        # アプリケーションが 8080 番ポートで待ち受けます。
+        - containerPort: 8080
