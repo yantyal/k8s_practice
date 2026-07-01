@@ -249,7 +249,7 @@ sequenceDiagram
 `Control Plane` と `Worker Node` の関係は、次のように考えるとわかりやすいです。
 
 | 種類 | 役割 | 例えるなら |
-|---|---|---|
+| --- | --- | --- |
 | `Control Plane` | クラスタ全体を管理する | 司令塔 |
 | `Worker Node` | 実際にアプリケーションを動かす | 作業員・実行部隊 |
 
